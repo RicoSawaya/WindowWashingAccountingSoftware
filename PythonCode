@@ -1,0 +1,356 @@
+from tkinter import *
+from datetime import datetime
+from datetime import timedelta
+from datetime import date
+from tkinter.ttk import Treeview,Scrollbar
+path = r'C:\Users\RicoS\OneDrive\Documents\txtFilesCode\WindowWashingLoggingJournal.txt'
+
+
+def loggingToHomeFunc():
+    homePage.place(relx=0.5,rely=0.5,anchor = CENTER)
+    logPage.place_forget()
+def revToLogFunc():
+    recordRevPage.place_forget()
+    logPage.place(relx=0.5,rely=0.5,anchor = CENTER)
+
+def expToLogFunc():
+    recordExpensePage.place_forget()
+    logPage.place(relx=0.5, rely=0.5, anchor=CENTER)
+
+
+def logRevenue(): #putting it in the txt document
+    reason = str(reasonOfIncomeEntry.get("1.0",'end-1c'))
+    amt = float(amtIncomeLabEntry.get())
+    date = str(datetime.now().strftime('%m/%d/%y/%H:%M'))
+
+    f = open(path,'a')
+    f.write('Revenue\n'+date+'\n'+str(amt)+'\nDescription:\n'+reason+'\n----------\n')
+    f.close()
+
+    amtIncomeStrVar.set('')
+    reasonOfIncomeEntry.delete(1.0, "end")
+
+def logExpense():
+    reason = str(reasonOfExpEntry.get("1.0", 'end-1c'))
+    amt = float(amtExpLabEntry.get())
+    date = str(datetime.now().strftime('%m/%d/%y/%H:%M'))
+
+
+    f = open(path, 'a')
+    if int(assetCheckBoxIntVar.get()) == 1:
+        f.write('Expense (Asset)\n' + date + '\n' + str(amt) + '\nDescription:\n' + reason + '\n----------\n')
+
+    else:
+        f.write('Expense\n' + date + '\n' + str(amt) + '\nDescription:\n' + reason + '\n----------\n')
+    f.close()
+
+    amtExpStrVar.set('')
+    reasonOfExpEntry.delete(1.0, "end")
+    assetCheckBoxIntVar.set(0)
+
+def recordRevenue():
+    logPage.place_forget()
+    recordRevPage.place(relx = 0.5, rely = 0.5,anchor = CENTER)
+    date = datetime.now().strftime('%m/%d/%y %H:%M')
+    dateRevLab.configure(text = date)
+
+def recordExpense():
+    logPage.place_forget()
+    recordExpensePage.place(relx = 0.5, rely = 0.5,anchor = CENTER)
+    date = datetime.now().strftime('%m/%d/%y %H:%M')
+    dateExpLab.configure(text = date)
+
+def startLogging():
+    homePage.place_forget()
+    logPage.place(relx = 0.5, rely = 0.5,anchor = CENTER)
+def seeTotals():
+    for i in treeview.get_children():
+        treeview.delete(i)
+
+
+    homePage.place_forget()
+    seeTotalsPage.place(relx=0.5,rely=0.5,anchor = CENTER)
+    f = open(path,'r')
+    lines = f.readlines()
+
+    revenueTotal = 0.0
+    for i in range(len(lines)):
+        if 'revenue' in lines[i].lower():
+            revenueTotal += float(lines[i+2])
+
+    expenseTotal = 0.0
+    for i in range(len(lines)):
+        if 'expense' in lines[i].lower():
+            expenseTotal += float(lines[i+2])
+
+    totalProfit = revenueTotal-expenseTotal
+
+    try:
+        profitRatio = totalProfit/revenueTotal * 100
+        profitRatio = round(profitRatio,2)
+    except:
+        profitRatio = 0.0
+
+    #print(revenueTotal)
+    #print(expenseTotal)
+    #print(totalProfit)
+    #print(str(profitRatio)+'%')
+
+    thisMo = datetime.now().strftime('%m')
+    thisYr = datetime.now().strftime('%y')
+
+    revenueMonth = 0.0
+    expenseMonth = 0.0
+
+    for i in range(len(lines)):
+        splitLine = lines[i].split('/')
+        if splitLine[0] == thisMo:
+            if splitLine[2] == thisYr:
+                if 'revenue' in lines[i-1].lower():
+                    revenueMonth += float(lines[i+1].replace('\n',''))
+                elif 'expense' in lines[i-1].lower():
+                    expenseMonth += float(lines[i+1].replace('\n',''))
+    #print('\n')
+    #print(revenueMonth)
+    #print(expenseMonth)
+    profitMonth = revenueMonth - expenseMonth
+    #print(profitMonth)
+    try:
+        profitRatioMonth = profitMonth/revenueMonth * 100
+        profitRatioMonth = round(profitRatioMonth,2)
+    except:
+        profitRatioMonth = 0.0
+    #print(str(profitRatioMonth) + '%')
+    #print('\n')
+
+    #0 = Monday
+    #1 = Tuesday
+    #2 = Wednesday
+    #3 = Thursday
+    #4 = Friday
+    #5 = Saturday
+    #6 = Sunday
+    weekdayNum = int(datetime.now().weekday())
+
+    delta = timedelta(days=weekdayNum)
+
+    startweek = datetime.now()-delta
+    startweekYr = startweek.strftime('%y')
+    startweekMo = startweek.strftime('%m')
+    startweekD = startweek.strftime('%d')
+
+    revenueWeek = 0.0
+    expensesWeek = 0.0
+
+    for i in range(len(lines)):
+        stripped = lines[i].split('/')
+        if len(stripped) == 4:
+            stripped = stripped[0:3]
+
+
+            startweekDate = date(int(startweekYr),int(startweekMo),int(startweekD))
+
+            examinedDate = date(int(stripped[2]),int(stripped[0]),int(stripped[1]))
+
+            if examinedDate >= startweekDate:
+                if 'revenue' in lines[i-1].lower().replace('\n',''):
+                    revenueWeek += float(lines[i+1])
+                elif 'expense' in lines[i-1].lower().replace('\n',''):
+                    expensesWeek += float(lines[i+1])
+
+    #print(revenueWeek)
+    #print(expensesWeek)
+    profitWeek = revenueWeek - expensesWeek
+    #print(profitWeek)
+    try:
+        profitRatioWeek = profitWeek/revenueWeek * 100
+        profitRatioWeek = round(profitRatioWeek,2)
+    except:
+        profitRatioWeek = 0.0
+    #print(str(profitRatioWeek)+'%')
+    treeview.insert(parent = '',index = 'end',iid=0,values=('Total Revenue',revenueTotal))
+    treeview.insert(parent = '',index = 'end',iid=1,values=('Total Expenses',expenseTotal))
+    treeview.insert(parent = '',index = 'end',iid=2,values=('Total Profit',round(totalProfit,2)))
+    treeview.insert(parent = '',index = 'end',iid=3,values=('Total Profit Ratio',str(profitRatio)+'%'))
+
+    treeview.insert(parent = '',index = 'end',iid=4,values=('',''))
+    treeview.insert(parent = '',index = 'end',iid=5,values=('Current Month Revenue',revenueMonth))
+    treeview.insert(parent = '',index = 'end',iid=6,values=('Current Month Expenses',expenseMonth))
+    treeview.insert(parent = '',index = 'end',iid=7,values=('Current Month Profit',profitMonth))
+    treeview.insert(parent = '',index = 'end',iid=8,values=('Current Month Profit Ratio',str(profitRatioMonth)+'%'))
+
+    treeview.insert(parent = '',index = 'end',iid=9,values=('',''))
+    treeview.insert(parent = '',index = 'end',iid=10,values=('Current Weekly Revenue',revenueWeek))
+    treeview.insert(parent = '',index = 'end',iid=11,values=('Current Weekly Expenses',expensesWeek))
+    treeview.insert(parent = '',index = 'end',iid=12,values=('Current Week Profit',profitWeek))
+    treeview.insert(parent = '',index = 'end',iid=13,values=('Current Week Profit Ratio',str(profitRatioWeek)+'%'))
+    f.close()
+
+def seeTotToHomeFunc():
+    seeTotalsPage.place_forget()
+    homePage.place(relx=0.5,rely=0.5,anchor = CENTER)
+
+def seeAssets():
+    homePage.place_forget()
+    assetsPage.place(relx=0.5,rely=0.5,anchor = CENTER)
+
+    for x in treeviewAssets.get_children():
+        treeviewAssets.delete(x)
+
+    f = open(path,'r')
+    lines = f.readlines()
+    id = 0
+    for i in range(len(lines)):
+        if 'asset' in lines[i].lower():
+            date = lines[i + 1].split('/')[0:3]
+            realDate = ''
+            for x in date:
+                realDate+=x+'/'
+            realDate = realDate[0:-1]
+            treeviewAssets.insert(parent = '',index = 'end',iid=id,values=(lines[i+4],lines[i+2],realDate))
+            id +=1
+    f.close()
+def assetsToHomeFunc():
+    homePage.place(relx=0.5, rely = 0.5,anchor = CENTER)
+    assetsPage.place_forget()
+
+if __name__ == '__main__':
+    tk = Tk()
+    tk.title('Window Washing Accounting')
+    tk.geometry('400x400')
+
+    FONT = ('Ariel',20)
+
+    #starting page
+    homePage = Canvas(tk,bg = 'black',width=500,height=500)
+
+    startLoggingBut = Button(homePage,text = 'New Log',fg='white',bg='black',font=FONT,command = startLogging)
+    startLoggingBut.place(relx=0.5,rely=0.2,anchor = CENTER)
+
+    seeTotalsBut = Button(homePage,text = 'See Totals',fg='white',bg = 'black',font = FONT,command= seeTotals)
+    seeTotalsBut.place(relx=0.5,rely=0.35,anchor = CENTER)
+
+    seeAssetsBut = Button(homePage,text = 'See Assets', fg='white',bg = 'black',font = FONT,command = seeAssets)
+    seeAssetsBut.place(relx=0.5,rely=0.5,anchor = CENTER)
+
+    homePage.place(relx=0.5,rely=0.5,anchor = CENTER)
+
+
+    #Logging Page
+    logPage = Canvas(tk,bg='black',width=500,height=500)
+
+    recordRevenue = Button(logPage,text = 'Record Revenue',fg='white',bg='black',font=FONT,command=recordRevenue)
+    recordRevenue.place(relx = 0.5,rely=0.2,anchor = CENTER)
+
+    recordExpense = Button(logPage,text = 'Record Expense',fg = 'white',bg = 'black',font = FONT,command = recordExpense)
+    recordExpense.place(relx=0.5,rely=0.35,anchor = CENTER)
+
+    loggingToHome = Button(logPage,text = '<-',fg = 'white',bg = 'black',font = ('Ariel',10),command = loggingToHomeFunc)
+    loggingToHome.place(relx=0.16,rely=0.16,anchor = CENTER)
+
+    #Record Revenue Page
+
+    recordRevPage = Canvas(tk,bg='black',width=500,height=500)
+    dateRevLab = Label(recordRevPage,text = 'test',fg = 'white',bg = 'black',font=FONT)
+    dateRevLab.place(relx=0.5,rely=0.16,anchor = CENTER)
+
+    reasonOfIncomeLab = Label(recordRevPage,text = 'Description of Income',font=FONT,fg = 'white',bg = 'black')
+    reasonOfIncomeLab.place(relx=0.5,rely=0.25,anchor = CENTER)
+
+    reasonOfIncomeStrVar = StringVar()
+    reasonOfIncomeEntry = Text(recordRevPage,font=('Ariel',12))
+    reasonOfIncomeEntry.place(relx=0.5,rely=0.3,anchor = N,width = 300,height = 120)
+
+    amtIncomeLab = Label(recordRevPage,text = 'Amount',fg = 'white',bg = 'black',font=FONT)
+    amtIncomeLab.place(relx=0.5,rely=0.6,anchor = CENTER)
+
+    amtIncomeStrVar = StringVar()
+    amtIncomeLabEntry = Entry(recordRevPage,font=('Ariel',12),textvariable=amtIncomeStrVar)
+    amtIncomeLabEntry.place(relx=0.5,rely=0.65,anchor = N,width = 100)
+
+    logRevBut = Button(recordRevPage,text = 'Log Revenue',font=FONT,fg = 'white',bg = 'green',command=logRevenue)
+    logRevBut.place(relx=0.5,rely=0.8,anchor = CENTER)
+
+    revToLog = Button(recordRevPage, text='<-', fg='white', bg='black', font=('Ariel', 10), command=revToLogFunc)
+    revToLog.place(relx=0.16, rely=0.16, anchor=CENTER)
+
+
+    #Record Expenses Page
+
+    recordExpensePage = Canvas(tk,bg='black',width=500,height=500)
+    dateExpLab = Label(recordExpensePage, text='', fg='white',bg = 'black', font=FONT)
+    dateExpLab.place(relx=0.5, rely=0.16,anchor = CENTER)
+
+    reasonOfExpLab = Label(recordExpensePage,text = 'Description of Expense',font=FONT,fg = 'white',bg = 'black')
+    reasonOfExpLab.place(relx=0.5,rely=0.25,anchor = CENTER)
+
+    reasonOfExpStrVar = StringVar()
+    reasonOfExpEntry = Text(recordExpensePage,font=('Ariel',12))
+    reasonOfExpEntry.place(relx=0.5,rely=0.3,anchor = N,width = 300,height = 120)
+
+    amtExpLab = Label(recordExpensePage,text = 'Amount',fg = 'white',bg = 'black',font=FONT)
+    amtExpLab.place(relx=0.5,rely=0.6,anchor = CENTER)
+
+    amtExpStrVar = StringVar()
+    amtExpLabEntry = Entry(recordExpensePage,font=('Ariel',12),textvariable=amtExpStrVar)
+    amtExpLabEntry.place(relx=0.5,rely=0.65,anchor = N,width = 100)
+
+    logExpBut = Button(recordExpensePage,text = 'Log Expense',font=FONT,fg = 'white',bg = 'green',command=logExpense)
+    logExpBut.place(relx=0.5,rely=0.8,anchor = CENTER)
+
+    assetCheckBoxIntVar = IntVar()
+    assetCheckBox = Checkbutton(recordExpensePage,text='Asset?',font = ('Ariel',15),fg = 'blue',bg = 'black',variable=assetCheckBoxIntVar)
+    assetCheckBox.place(relx=0.2933,rely=0.6,anchor = CENTER)
+
+
+    ExpToLog = Button(recordExpensePage, text='<-', fg='white', bg='black', font=('Ariel', 10), command=expToLogFunc)
+    ExpToLog.place(relx=0.16, rely=0.16, anchor=CENTER)
+
+
+    #See totals page
+    seeTotalsPage = Canvas(tk,width=500,height=500,bg = 'black')
+
+    seeTotToHome = Button(seeTotalsPage, text='<-', fg='white', bg='black', font=('Ariel', 10), command=seeTotToHomeFunc)
+    seeTotToHome.place(relx=0.16, rely=0.16, anchor=CENTER)
+
+    treeview = Treeview(seeTotalsPage,height=15)
+    treeview.place(relx=0.5,rely=0.5,anchor = CENTER)
+
+    treeview['columns'] = ('Title','Number')
+    treeview.column('#0',width = 0)
+
+    treeview.column('Title',width = 150)
+    treeview.column('Number',width = 100)
+
+    treeview.heading('#0',text = '')
+    treeview.heading('Title',text = 'Name')
+    treeview.heading('Number',text = 'Amount')
+
+    #Assets Page
+    assetsPage = Canvas(tk,bg = 'black',width=500,height=500)
+    assetsToHomeBut = Button(assetsPage, text='<-', fg='white', bg='black', font=('Ariel', 10), command=assetsToHomeFunc)
+    assetsToHomeBut.place(relx=0.16, rely=0.16, anchor=CENTER)
+
+    treeviewAssets = Treeview(assetsPage, height=15)
+    treeviewAssets.place(relx=0.5, rely=0.52, anchor=CENTER)
+
+    vsb = Scrollbar(assetsPage, orient="vertical", command=treeviewAssets.yview)
+    vsb.place(relx=0.834, rely=0.52, height=325,anchor = CENTER)
+    treeviewAssets.configure(yscrollcommand=vsb.set)
+
+
+    treeviewAssets['columns'] = ('Asset Name', 'Number','Date Purchased')
+    treeviewAssets.column('#0', width=0)
+
+    treeviewAssets.column('Asset Name', width=100)
+    treeviewAssets.column('Number', width=100)
+    treeviewAssets.column('Date Purchased', width=120)
+
+
+    treeviewAssets.heading('#0', text='')
+    treeviewAssets.heading('Asset Name', text='Name')
+    treeviewAssets.heading('Number', text='Purchase Price')
+    treeviewAssets.heading('Date Purchased', text='Date Purchased')
+
+
+    tk.mainloop()
